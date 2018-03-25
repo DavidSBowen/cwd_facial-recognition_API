@@ -2,6 +2,17 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
+const knex = require('knex')
+
+const db = knex({
+    client: 'pg',
+    connection: {
+        host: '127.0.0.1',
+        user: 'davidbowen',
+        password: '',
+        database: 'smart-brain'
+    }
+});
 
 const app = express();
 
@@ -12,7 +23,7 @@ app.use(cors());
 const database = {
     users: [
         {
-            id: '123',
+            id: '1',
             name: 'John',
             email: 'john@gmail.com',
             password: 'cookies',
@@ -45,36 +56,17 @@ const database = {
     ]
 }
 
-app.use(function (req, res, next) {
-    let now = new Date();
-    console.log(now.toLocaleDateString() + " " + now.getHours() + " " + + now.getMinutes() + " " + + now.getSeconds());
-
-    // bcrypt.hash(req.body.password, null, null, function (err, hash) {
-    //     console.log(hash);
-    // });
-
-    next()
-});
-
 app.get('/', (req, res) => {
-    res.json(database.users);
+    db('users')
+        .select('*')
+        .then(data => {
+            res.json(data);
+        })
 });
-
-// app.use('/signin', (req, res, next) => {
-//     bcrypt.compare(req.body.password, database.users[0].password, function (err, res) {
-//         if (res === true) {
-//             console.log('good password');
-//             res.locals.testvalue = true;
-//         } else {
-//             console.log('bad password');
-//             res.locals.testvalue = true;
-//         }
-//     });
-
-//     next();
-// })
 
 app.post('/signin', (req, res) => {
+    // const { email, password } = req.body;
+    // db('users');
 
     let userFound = false;
 
@@ -99,42 +91,53 @@ app.post('/signin', (req, res) => {
 app.post('/register', (req, res) => {
     const { email, name, password, balls } = req.body;
 
-    database.users.push({
-        id: '126',
-        name: name,
-        email: email,
-        balls: balls,
-        password: password,
-        entries: 0,
-        joined: new Date()
-    });
-    res.json(database.users[database.users.length - 1]);
+    db('users')
+        .returning('*')
+        .insert({
+            email: email,
+            name: name,
+            joined: new Date()
+        })
+        .then(user => {
+            res.json(user[0])
+        })
+        .catch(err => {
+            res.status(400).json('unable to register');
+        })
 });
+
 
 app.get('/profile/:id', (req, res) => {
     const { id } = req.params;
     let found = false;
-    database.users.forEach(user => {
-        if (user.id === id) {
-            found = true;
-            return res.json(user);
-        }
-    });
-    if (!found) {
-        res.status(404).json('not found');
-    }
+
+    db('users')
+        .where('id', '=', id)
+        .select('*')
+        .then(data => {
+            console.log(data);
+            res.status(200).json(data);
+        })
+        .catch(error => {
+            res.status(404).json('not found', error);
+        })
 });
 
 app.put('/image', (req, res) => {
     const { id } = req.body;
-    let found = false;
-    database.users.forEach(user => {
-        if (user.id === id) {
-            found = true;
-            user.entries++;
-            return res.json(user.entries);
-        }
-    });
+
+    db('users')
+        .returning('*')
+        .where('id', '=', id)
+        .increment('entries', 1)
+        .then(data => {
+            console.log(data);
+            return res.status(200).json(data[0]);
+        })
+        .catch(error => {
+            console.log(error);
+            return res.status(404).json(error);
+        });
 });
 
 app.listen(3000, () => {
