@@ -111,9 +111,12 @@ app.get('/profile/:id', (req, res) => {
     const { id } = req.params;
     let found = false;
 
-    db('users')
-        .where('id', '=', id)
+    db
         .select('*')
+        .from('users')
+        .where({
+            id: id
+        })
         .then(data => {
             console.log(data);
             res.status(200).json(data);
