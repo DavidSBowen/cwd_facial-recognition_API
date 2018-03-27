@@ -1,8 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const bcrypt = require('bcrypt-nodejs');
+const bcrypt = require('bcrypt');
 const cors = require('cors');
 const knex = require('knex')
+const saltRounds = 10;
 
 const db = knex({
     client: 'pg',
@@ -57,10 +58,17 @@ const database = {
 }
 
 app.get('/', (req, res) => {
-    db('users')
+    db
         .select('*')
+        .from('users')
         .then(data => {
-            res.json(data);
+            if (data.length) {
+                res.json(data);
+            } else {
+                res.status(400).json('not found');
+            }
+        }).catch(err => {
+            res.status(400).json('database error');
         })
 });
 
@@ -89,22 +97,65 @@ app.post('/signin', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-    const { email, name, password, balls } = req.body;
-
-    db('users')
-        .returning('*')
-        .insert({
-            email: email,
-            name: name,
-            joined: new Date()
+    const { email, name, password } = req.body;
+    bcrypt.hash(password, saltRounds, (hashError, hashSuccess) => {
+        console.log('hash:', hashSuccess);
+        db.transaction(trx => {
+            trx.insert({
+                hash: hashSuccess,
+                email: email
+            })
+                .into('login')
+                .returning('email')
+                .then(loginEmail => {
+                    return trx('users')
+                        .returning('*')
+                        .insert({
+                            email: loginEmail[0],
+                            name: name,
+                            joined: new Date()
+                        })
+                        .then(user => {
+                            res.json(user[0])
+                        })
+                })
+                .then(trx.commit)
+                .catch(trx.rollback)
         })
-        .then(user => {
-            res.json(user[0])
-        })
-        .catch(err => {
-            res.status(400).json('unable to register');
-        })
+            .catch(err => {
+                res.status(400).json('unable to register');
+            });
+    });
 });
+
+// const hash = bcrypt.hashSync(password);
+// console.log(hash);
+// db.transaction(trx => {
+//     trx.insert({
+//         hash: hash,
+//         email: email
+//     })
+//         .into('login')
+//         .returning('email')
+//         .then(loginEmail => {
+//             return trx('users')
+//                 .returning('*')
+//                 .insert({
+//                     email: loginEmail[0],
+//                     name: name,
+//                     joined: new Date()
+//                 })
+//                 .then(user => {
+//                     res.json(user[0])
+//                 })
+//         })
+//         .then(trx.commit)
+//         .catch(trx.rollback)
+// })
+//     .catch(err => {
+//         res.status(400).json('unable to register');
+//     })
+// });
 
 
 app.get('/profile/:id', (req, res) => {
@@ -139,7 +190,7 @@ app.put('/image', (req, res) => {
         })
         .catch(error => {
             console.log(error);
-            return res.status(404).json(error);
+            return res.status(404).json('unable to update or retrieve entries');
         });
 });
 
