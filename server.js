@@ -21,42 +21,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-const database = {
-    users: [
-        {
-            id: '1',
-            name: 'John',
-            email: 'john@gmail.com',
-            password: 'cookies',
-            entries: 0,
-            joined: new Date()
-        },
-        {
-            id: '124',
-            name: 'Sally',
-            email: 'sally@gmail.com',
-            password: 'bananas',
-            entries: 0,
-            joined: new Date()
-        },
-        {
-            id: '125',
-            name: 'David',
-            email: 'david@gmail.com',
-            password: 'soccer',
-            entries: 0,
-            joined: new Date()
-        }
-    ],
-    login: [
-        {
-            id: '987',
-            hash: '',
-            email: 'john@gmail.com'
-        }
-    ]
-}
-
 app.get('/', (req, res) => {
     db
         .select('*')
@@ -74,29 +38,37 @@ app.get('/', (req, res) => {
 
 app.post('/signin', (req, res) => {
     const { email, password } = req.body;
-
-    db.select('email', 'hash')
+    console.log('POST /signin attempted sign in to: ' + email)
+    db
+        .select('email', 'hash')
         .from('login')
         .where({
             email: email
         })
         .then(data => {
-            db.select('*')
-                .from('users')
-                .where({
-                    email: data[0].email
-                })
-                .returning('*')
-                .then(data2 => {
-                    console.log(data2[0]);
-                    res.status(200).json(data2[0]);
-                })
-                .catch(err => {
-                    console.log('POST /signin error selecting email from users db', err);
-                    res.status(400).json('unable to find user')
-                })
+            bcrypt.compare(password, data[0].hash, function (err, resp) {
+                if (resp) {
+                    db.select('*')
+                        .from('users')
+                        .where({
+                            email: data[0].email
+                        })
+                        .then(data2 => {
+                            console.log('POST /signin successful for:', data2[0].email);
+                            res.status(200).json(data2[0]);
+                        })
+                        .catch(error => {
+                            console.log('POST /signin error selecting email from users db', error);
+                            res.status(400).json('username / password combo not found')
+                        })
+                } else {
+                    console.log('POST /signin Password problem:' + err + ' ' + data[0].email);
+                    res.status(400).json('username / password combo not found');
+                }
+            });
+
         })
-        .catch(err=>{
+        .catch(err => {
             console.log('POST /signin error finding email in login db', err);
             res.status(400).json('unable to find user');
         })
@@ -105,7 +77,6 @@ app.post('/signin', (req, res) => {
 app.post('/register', (req, res) => {
     const { email, name, password } = req.body;
     bcrypt.hash(password, saltRounds, (hashError, hashSuccess) => {
-        console.log('hash:', hashSuccess);
         db.transaction(trx => {
             trx.insert({
                 hash: hashSuccess,
@@ -122,7 +93,11 @@ app.post('/register', (req, res) => {
                             joined: new Date()
                         })
                         .then(user => {
+                            console.log('POST /register successfully registered for:', user[0].email)
                             res.json(user[0])
+                        })
+                        .catch(err => {
+                            res.status(400).json('failed to register user');
                         })
                 })
                 .then(trx.commit)
