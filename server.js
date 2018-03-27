@@ -73,27 +73,33 @@ app.get('/', (req, res) => {
 });
 
 app.post('/signin', (req, res) => {
-    // const { email, password } = req.body;
-    // db('users');
+    const { email, password } = req.body;
 
-    let userFound = false;
-
-    for (let i = 0; i < database.users.length; i++) {
-
-        if (req.body.email === database.users[i].email &&
-            req.body.password === database.users[i].password) {
-            console.log('sign in post works', database.users[i].name);
-            userFound = true;
-            res.json(database.users[i]);
-        } else {
-            console.log("sign in post doesn't work");
-        }
-    }
-    if (!userFound) {
-        res.status(400).json("Error logging in");
-    }
-
-
+    db.select('email', 'hash')
+        .from('login')
+        .where({
+            email: email
+        })
+        .then(data => {
+            db.select('*')
+                .from('users')
+                .where({
+                    email: data[0].email
+                })
+                .returning('*')
+                .then(data2 => {
+                    console.log(data2[0]);
+                    res.status(200).json(data2[0]);
+                })
+                .catch(err => {
+                    console.log('POST /signin error selecting email from users db', err);
+                    res.status(400).json('unable to find user')
+                })
+        })
+        .catch(err=>{
+            console.log('POST /signin error finding email in login db', err);
+            res.status(400).json('unable to find user');
+        })
 });
 
 app.post('/register', (req, res) => {
@@ -127,36 +133,6 @@ app.post('/register', (req, res) => {
             });
     });
 });
-
-// const hash = bcrypt.hashSync(password);
-// console.log(hash);
-// db.transaction(trx => {
-//     trx.insert({
-//         hash: hash,
-//         email: email
-//     })
-//         .into('login')
-//         .returning('email')
-//         .then(loginEmail => {
-//             return trx('users')
-//                 .returning('*')
-//                 .insert({
-//                     email: loginEmail[0],
-//                     name: name,
-//                     joined: new Date()
-//                 })
-//                 .then(user => {
-//                     res.json(user[0])
-//                 })
-//         })
-//         .then(trx.commit)
-//         .catch(trx.rollback)
-// })
-//     .catch(err => {
-//         res.status(400).json('unable to register');
-//     })
-// });
-
 
 app.get('/profile/:id', (req, res) => {
     const { id } = req.params;
