@@ -13,16 +13,7 @@ const profile_Id = require('./controllers/profile_Id');
 const imagePath = require('./controllers/imagePath');
 
 const portNum = process.env.PORT || 3000;
-
-const db = knex({
-    client: 'pg',
-    connection: {
-        host: '127.0.0.1',
-        user: 'davidbowen',
-        password: '',
-        database: 'smart-brain'
-    }
-});
+const db = require('./databases/db1');
 
 const app = express();
 
