@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
+const knex = require('knex')
 const helmet = require('helmet');
 const saltRounds = 10;
 
@@ -12,7 +13,14 @@ const profile_Id = require('./controllers/profile_Id');
 const imagePath = require('./controllers/imagePath');
 
 const portNum = process.env.PORT || 3000;
-const db = require('./databases/db1');
+
+const db = knex({
+    client: 'pg',
+    connection: {
+        host: process.env.DATABASE_URL
+    },
+    ssl: true
+});
 
 const app = express();
 
