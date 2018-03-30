@@ -12,6 +12,8 @@ const rootPath = require('./controllers/rootPath');
 const profile_Id = require('./controllers/profile_Id');
 const imagePath = require('./controllers/imagePath');
 
+const portNum = process.env.PORT || 3000;
+
 const db = knex({
     client: 'pg',
     connection: {
@@ -41,8 +43,8 @@ app.get('/profile/:id', (req, res) => { profile_Id.handleProfile_IdGET(req, res,
 app.put('/image', (req, res) => { imagePath.handleImagePathPUT(req, res, db) });
 app.post('/imageurl', (req, res) => { imagePath.handleClarifaiApiCall(req, res) });
 
-app.listen(3000, () => {
-    console.log('app running on port 3000');
+app.listen(portNum, () => {
+    console.log(`app running on port ${portNum}`);
 });
 
 
