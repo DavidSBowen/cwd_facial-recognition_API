@@ -15,6 +15,7 @@ const imagePath = require('./controllers/imagePath');
 const portNum = process.env.PORT || 3000;
 
 const db = knex({
+    client:'pg',
     connectionString: process.env.DATABASE_URL,
     ssl: true
 });
