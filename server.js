@@ -34,7 +34,7 @@ app.get('/', (req, res) => { rootPath.handleRootGET(req, res, db) });
 
 app.post('/signin', (req, res) => { signin.handleSigninPOST(req, res, db, bcrypt) });
 
-app.post('/register', (req, res) => { register.handleRegisterPOST(req, res, db, bcrypt) });
+app.post('/register', (req, res) => { register.handleRegisterPOST(req, res, db, bcrypt, saltRounds) });
 
 app.get('/profile/:id', (req, res) => { profile_Id.handleProfile_IdGET(req, res, db) });
 
