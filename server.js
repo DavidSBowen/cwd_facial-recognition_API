@@ -53,3 +53,7 @@ app.listen(portNum, () => {
     /profile/:userId --> GET = user
     /image --> PUT --> user & count
 */
+
+/*
+    /image --> POST = add to posts db
+*/
