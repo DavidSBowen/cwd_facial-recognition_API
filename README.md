@@ -12,5 +12,12 @@ Create a new section below image to hold a list of images posted by the logged i
 Add a GET fetch contacting api /image to retrieve list of images entered by logged in user
 Add a POST fetch contacting api /image to the image submit button which posts the submitted image and retrieves a new list of images with   the current image included
 
+DB:
+Add new table for images
+    Columns:
+        email > string/varchar/text
+        image_url > string/varchar/text
+        number_of_faces > integer
+
 # cwd_facial-recognition_API
 Backend for the facial-recognition app
