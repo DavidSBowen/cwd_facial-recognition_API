@@ -14,13 +14,37 @@ const imagePath = require('./controllers/imagePath');
 
 const portNum = process.env.PORT || 3000;
 
-const db = knex({
-    client: 'pg',
-    connection: {
-        connectionString: process.env.DATABASE_URL,
-        ssl: true
-    }
-});
+let db = {};
+
+let localServer;
+
+if (process.env.PORT) {
+    localServer = false;
+} else {
+    localServer = true;
+}
+
+if (localServer) {
+    db = knex({
+        client: 'pg',
+        connection: {
+            host: '127.0.0.1',
+            user: '',
+            password: '',
+            database: 'smart-brain'
+        }
+    })
+    console.log('server running locally');
+} else {
+    db = knex({
+        client: 'pg',
+        connection: {
+            connectionString: process.env.DATABASE_URL,
+            ssl: true
+        }
+    });
+    console.log('server running on heroku');
+}
 
 const app = express();
 
@@ -37,6 +61,12 @@ app.post('/signin', (req, res) => { signin.handleSigninPOST(req, res, db, bcrypt
 app.post('/register', (req, res) => { register.handleRegisterPOST(req, res, db, bcrypt, saltRounds) });
 
 app.get('/profile/:id', (req, res) => { profile_Id.handleProfile_IdGET(req, res, db) });
+
+// Add a GET for /image which returns list of images posted by logged in user
+app.get('/image/:email', (req, res) => { imagePath.handleImageGET(req, res, db) });
+
+// Add a POST for /image which puts each image URL in an images table and returns a new list of images entered by logged in user
+app.post('/image', (req, res) => { imagePath.handleImagePOST(req, res, db) });
 
 app.put('/image', (req, res) => { imagePath.handleImagePathPUT(req, res, db) });
 app.post('/imageurl', (req, res) => { imagePath.handleClarifaiApiCall(req, res) });

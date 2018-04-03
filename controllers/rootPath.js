@@ -1,4 +1,5 @@
 const handleRootGET = (req, res, db) => {
+    console.log('root access');
     db
         .select('*')
         .from('users')
