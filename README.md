@@ -19,6 +19,7 @@ Add a POST fetch contacting api /image to the image submit button which posts th
         email > string/varchar/text
         image_url > string/varchar/text
         number_of_faces > integer -->
+Above done 2018-04-01
 
 # cwd_facial-recognition_API
 Backend for the facial-recognition app
